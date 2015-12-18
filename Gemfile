@@ -24,3 +24,9 @@ group :development do
   gem 'web-console', github: 'rails/web-console'
   gem 'spring'
 end
+
+
+gem 'responders'
+gem 'resque'
+gem 'resque-scheduler'
+

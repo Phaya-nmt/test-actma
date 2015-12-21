@@ -1,7 +1,36 @@
+
 <h1>Authenticate as one of the following users</h1>
+
+<div class="depot_form">
+  <% if flash[:alert] %>
+  <p id="notice"><%= flash[:alert] %></p>
+  <% end %>
+
+
+<!-- ログインフォーム -->
+  <%= form_tag do %>
+  <fieldset>
+    <legend>ログインしてください</legend>
+    <div>
+      <%= label_tag :name, '名前'%>
+      <%= text_field_tag :name, params[:name] %>
+    </div>
+    <div>
+      <%= label_tag :password, 'パスワード' %>
+      <%= password_field_tag :password, params[:password] %>
+    </div>
+    <div>
+      <%= submit_tag "ログイン" %>
+    </div>
+  </fieldset>
+  <% end %>
+</div>
+<!-- ログインフォーム -->
 
 <p>
   <ul>
+
+  ssssssssssssss
     <% @users.each do |user| %>
       <li><%= link_to user.name, session_url(user_id: user.id), method: :post %></li>
     <% end %>

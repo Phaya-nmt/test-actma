@@ -729,26 +729,14 @@ end
 # ---------------------Unmoの感情クラスここまで-------------
 
 # ---------------------ここまでUnmoクラス-------------
-
 # promptメソッド
 def prompt(unmo)
   # 出力処理を記述の際に prompt(proto) と明示するための処理
   return unmo.name + ':' + unmo.responder_name + '>'
-
-
-
-
   def construct
-
-
     @souvenir = Unmo.new('bot')
-
-
-
     @souvenir = ["Unmo System : #{@souvenir.name} Log -- #{Time.now}"]
   end
-
-
   def self_destroy
     @souvenir.save
 
@@ -757,26 +745,17 @@ def prompt(unmo)
       f.puts
     end
   end
-
-
   def putlog(log)
     @log_area.input += "#{log}\n"
     @log_area.scrollTo(@log_area.countLines-1, 1)
     @log.push(log)
   end
-
-
 end
-
 
 # -------------ここから実行した時の出力処理始まり------------
 
  m = Mecab.new("")
  # mに解析の命令を代入して初期化
-
-
-
-
 
 # プログラムタイトルの表示
 puts ('Unmo System prototype : proto')
@@ -804,25 +783,6 @@ break if input == ""
 # dialogueメソッドにより入力文字列を引数として呼び出し
 # 戻り値をresponseという変数に代入
 response = proto.dialogue(input)
-  ary = ["#{analyz}".chomp.split(/t/).map do |part|
-        part.split(/ /)
-        # return /名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ ary
-        end
-      ]
-
-
-
-
-
-
-# puts @mecab
-# puts Mecab
-   # promptを＋で付けてresponseメソッドで定義した応答を表示
-  # puts(prompt(proto) + response)
   res = (prompt(proto) + response)
   puts res
 end
-
-
-
-

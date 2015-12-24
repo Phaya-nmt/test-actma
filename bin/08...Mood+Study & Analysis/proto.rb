@@ -7,7 +7,7 @@ require "fiddle/import"
 
 module MecabImporter
   extend Fiddle::Importer
-  path = 'C:\Program Files\MeCab\bin\libmecab.dll'
+  path = 'libmecab.dll'
   
   dlload path
   extern "mecab_t* mecab_new2(const char*)"
@@ -170,37 +170,48 @@ end
 
 
 # ---------------------ここからMorph（形態素）モジュール---------
-module Morph
+module Morph Mecab
 #   # ここでMecabモジュールの初期化を行う
   def init_analyzer
 #     # Mecab::setargで起動オプションの指定
-    @mecab::setarg('-F%m %P-\t');
+    Mecab::setarg('-F%m %P-\t');
 #     # -区切りの品詞情報をタブで区切って出力
   end
 
 # # textで受け取った品詞情報のペアの配列をつくる
   def analyze(input)
+      part = Mecab.new("").sparse_tostr(input).to_s.force_encoding("utf-8")
+      # puts part
+puts "--------------------------------------"
+puts "■入力文字確認"
+    puts part
+puts "--------------------------------------"
+      # mに解析の命令を代入して初期化して解析
 #     # init_analyzerが設定した出力形式により得た文章を分解して
 #     # 形態素と品詞のペアの配列を作成する
-    return @mecab::analyze(input).chomp.split(/\t/).map do |part|
-      part.split(/ /)
+    return "#{part}".chomp.split(/t/).map do |part|
+        part.split(/ /)
     end
     # ここにMecabで解析した形態素と品詞情報をsplitしてmapで配列の配列にしたいのだが....
   end
 
+
   def keyword?(part)
-    return /名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ part
+    return "/名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/" =~ part
+
   end
 
+
   module_function :init_analyzer, :analyze, :keyword?
+
 end
 # ---------------------Morph（形態素）モジュールここまで---------
 
 
 
-
 # ---------------------ここからDictionaryクラスの定義開始---------
 class Dictionary
+
     def initialize
       # オブジェクト作成時に空の配列を作成↓
 
@@ -250,20 +261,44 @@ class Dictionary
             #経緯としては、(Sjisを)getsで受け取り、UTF8に変換→ライブラリ内文字列(SJIS)とマッチさせた後に、
             #再度UTF8で出力するという事を行っています。これを行わないと、文字化けしたものをto_sしようとして落ちます
             #
-            # 
+            #
     # -------------繰り返し終了----------------------
     end
   end
+end
 
-    def study(input)
-      return if @random.include?(input)
-      @random.push(input)
+
+    def study(input, parts)
+    study_random(input)
+    study_pattern(input, parts)
     end
+
+  def study_random(input)
+    return if @random.include?(input)
+    @random.push(input)
+  end
+
+  def study_pattern(input, parts)
+    parts.each do |word, part|
+      next unless Morph::keyword?(part)
+      next if Regexp::quote(word) != word
+      duped = @pattern.find{|ptn_item| ptn_item.pattern == word}
+      if duped
+        duped.add_phease(input)
+      else
+        @pattern.push(PatternItem.new(word, input))
+      end
+      return
+    end
+  end
 
     def save
       open('dics/random.txt', 'w') do |f|
         f.puts(@random)
       end
+
+    open('dics/pattern.txt', 'w') do |f|
+      @pattern.each{|ptn_item| f.puts(ptn_item.make_line)}
     end
   end
 
@@ -341,7 +376,18 @@ def match(str)
     end
   end
 
-  attr_reader :modify, :pattern, :phrases
+  def add_phease(phrase)
+    return if @phrases.find{|p| p['phrase'] == phrase}
+    @phrases.push({'need'=>0, 'phrase'=>phrase})
+  end
+
+  def make_line
+    pattern = @modify.to_s + "##" + @pattern
+    phrases = @phrases.map{|p| p['need'].to_s + "##" + p['phrase']}
+    return pattern + "\t" + phrases.join('|')
+  end
+
+  attr_reader :modify, :pattern, :phrases, :random
 end
 # -------------------PatternItemクラスここまで-----------
 
@@ -454,6 +500,7 @@ end
 
 
 class Unmo
+include Morph
 
   def initialize(name)
     # オブジェクトを作成時に必ず実行したい処理は↓
@@ -483,6 +530,7 @@ class Unmo
 # ここが対話メソッドとなる dialogueメソッド
 def dialogue(input)
   @emotion.update(input)
+  parts = Morph::analyze(input)
 
   case rand(100)
       # 以前0か1を受け取って出力していた処理を今回は、0～100で行っています
@@ -508,7 +556,7 @@ def dialogue(input)
 # return @responder.response(input, @emotion.mood)
 
 resp = @responder.response(input, @emotion.mood)
-@dictionary.study(input)
+@dictionary.study(input,parts)
   return resp
 end
 def save
@@ -525,9 +573,6 @@ end
   end
 
   attr_reader :name
-  # def name
-  #   return @name
-  # end
 end
 
 # ---------------------Unmoの感情クラス-------------
@@ -715,7 +760,7 @@ def prompt(unmo)
 
 
   def putlog(log)
-    @log_area.text += "#{log}\n"
+    @log_area.input += "#{log}\n"
     @log_area.scrollTo(@log_area.countLines-1, 1)
     @log.push(log)
   end
@@ -728,6 +773,8 @@ end
 
  m = Mecab.new("")
  # mに解析の命令を代入して初期化
+
+
 
 
 
@@ -754,21 +801,26 @@ print(">")
 # 文字のチェック。空の文字が入力されたら終了
 break if input == ""
  analyz = m.sparse_tostr(input)
-
 # dialogueメソッドにより入力文字列を引数として呼び出し
 # 戻り値をresponseという変数に代入
 response = proto.dialogue(input)
-puts "--------------------------------------"
-puts "■入力文字確認"
- ary = ["#{analyz}"[0..3],"#{analyz}"[4..-1],","]
- ary1 = [ary[0], ary[1].split(",")]
-puts ary1
- # Fiddle::Pointer クラス
-puts "--------------------------------------"
+  ary = ["#{analyz}".chomp.split(/t/).map do |part|
+        part.split(/ /)
+        # return /名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ ary
+        end
+      ]
+
+
+
+
+
+
 # puts @mecab
 # puts Mecab
    # promptを＋で付けてresponseメソッドで定義した応答を表示
-  puts(prompt(proto) + response)
+  # puts(prompt(proto) + response)
+  res = (prompt(proto) + response)
+  puts res
 end
 
 

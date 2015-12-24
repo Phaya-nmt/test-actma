@@ -127,6 +127,7 @@ GEM
     faye-websocket (0.9.2)
       eventmachine (>= 0.12.0)
       websocket-driver (>= 0.5.1)
+    ffi (1.9.10)
     globalid (0.3.5)
       activesupport (>= 4.1.0)
     hiredis (0.5.2)
@@ -150,6 +151,8 @@ GEM
     minitest (5.7.0)
     mono_logger (1.1.0)
     multi_json (1.11.2)
+    natto (1.0.1)
+      ffi (>= 1.9.0)
     nokogiri (1.6.6.2)
       mini_portile (~> 0.6.0)
     puma (2.11.3)
@@ -228,6 +231,7 @@ DEPENDENCIES
   coffee-rails!
   jbuilder (~> 2.0)
   jquery-rails
+  natto
   puma
   rails!
   responders

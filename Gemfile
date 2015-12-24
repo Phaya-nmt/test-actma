@@ -26,11 +26,9 @@ group :development do
 end
 
 
-<<<<<<< HEAD
-gem 'mecab'
-=======
 gem 'responders'
 gem 'resque'
 gem 'resque-scheduler'
-
->>>>>>> 869781900ed812de3b23d5940e668326bcf1c552
+gem 'natto'
+# gem 'mecab-ipadic'
+# gem 'mecab'

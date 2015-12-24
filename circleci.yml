@@ -1,0 +1,9 @@
+machine:
+  ruby:
+    version: 2.2.3
+dependencies:
+  pre:
+    - bash ./install_mecab.sh
+  cache_directories:
+    - vendor/mecab
+

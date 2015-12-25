@@ -4,6 +4,7 @@
 # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼形態素解析▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 require "fiddle/import"
+require 'byebug'
 
 module MecabImporter
   extend Fiddle::Importer
@@ -185,6 +186,8 @@ module Morph Mecab
 puts "--------------------------------------"
 puts "■入力文字確認"
     puts part
+    debugger
+    puts keyword?(part)
 puts "--------------------------------------"
       # mに解析の命令を代入して初期化して解析
 #     # init_analyzerが設定した出力形式により得た文章を分解して
@@ -197,7 +200,8 @@ puts "--------------------------------------"
 
 
   def keyword?(part)
-    return "/名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/" =~ part
+
+    return /名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ part
 
   end
 

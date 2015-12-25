@@ -1,4 +1,4 @@
-﻿1	%noun%してますか？
+1	%noun%してますか？
 1	%noun%が怖い
 1	てにいれろ！%noun%！
 1	%noun%の日じゃないでしょって
@@ -65,7 +65,7 @@
 1	%noun%かよ
 1	なかなか%noun%ですね
 1	だって%noun%
-1	%noun%―
+1	%noun%—
 1	今日の%noun%はなんだね？
 1	ばいばい%noun%
 1	かわいいじ%noun%ん
@@ -76,7 +76,7 @@
 2	%noun%は%noun%のときにやるんだよ
 2	ふふ%noun%%noun%ん
 2	%noun%の%noun%はしてないよ
-2	きゃー！%noun%ン%noun%―！！
+2	きゃー！%noun%ン%noun%—！！
 2	%noun%は%noun%ないだろう
 2	だから%noun%は%noun%ねえよ！
 2	%noun%%noun%だな

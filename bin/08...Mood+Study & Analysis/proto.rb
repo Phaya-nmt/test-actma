@@ -191,9 +191,9 @@ module Morph Mecab
     # mに解析の命令を代入して初期化して解析
     # init_analyzerが設定した出力形式により得た文章を分解して
     # 形態素と品詞のペアの配列を作成する
-    return "#{part}".chomp.split(/t/).map do |part|
-        part.split(/ /)
-    end
+    return "#{part}".chomp.split("\n").map { |line|
+        line.split("\t")
+    }[0...-1]
     # ここにMecabで解析した形態素と品詞情報をsplitしてmapで配列の配列にしたいのだが....
   end
 
@@ -205,8 +205,105 @@ module Morph Mecab
 end
 # ---------------------Morph（形態素）モジュールここまで---------
 
+# 　　　　　　　■　■■■　■■　■■　　■■■　　■■　　■■　■　■
+# ■マルコフ↓■■　　■　　■　■　■　■　■　■■■　■■　■　■　■
+# ■■　　　■■■　■　■　■　　　■　　■■　■■■　■■　■　■　■
+# ■■■　■■■■　■■■　■　■　■　■　■■　　■■　　■■■　■■
+# ----------------------------------------------------------------
+class Markov
+  ENDMARK = '%END%'
+  CHAIN_MAX = 30
 
+  def initialize
+    @dic = {}
+    @starts = {}
+  end
 
+  def add_sentence(parts)
+    return if parts.size < 3
+
+    parts = parts.dup
+    prefix1, prefix2 = parts.shift[0], parts.shift[0]
+    add_start(prefix1)
+
+    parts.each do |suffix, part|
+      add_suffix(prefix1, prefix2, suffix)
+      prefix1, prefix2 = prefix2, suffix
+    end
+    add_suffix(prefix1, prefix2, ENDMARK)
+  end
+
+  def generate(keyword)
+    return nil if @dic.empty?
+
+    words = []
+    prefix1 = (@dic[keyword])? keyword : select_start
+    prefix2 = select_random(@dic[prefix1].keys)
+    words.push(prefix1, prefix2)
+    CHAIN_MAX.times do
+      suffix = select_random(@dic[prefix1][prefix2])
+      break if suffix == ENDMARK
+      words.push(suffix)
+      prefix1, prefix2 = prefix2, suffix
+    end
+    return words.join
+  end
+
+  def load(f)
+    @dic = Marshal::load(f)
+    @starts = Marshal::load(f)
+  end
+
+  def save(f)
+    Marshal::dump(@dic, f)
+    Marshal::dump(@starts, f)
+  end
+
+private
+  def add_suffix(prefix1, prefix2, suffix)
+    @dic[prefix1] = {} unless @dic[prefix1]
+    @dic[prefix1][prefix2] = [] unless @dic[prefix1][prefix2]
+    @dic[prefix1][prefix2].push(suffix)
+  end
+
+  def add_start(prefix1)
+    @starts[prefix1] = 0 unless @starts[prefix1]
+    @starts[prefix1] += 1
+  end
+
+  def select_start
+    return select_random(@starts.keys)
+  end
+end
+
+if $0 == __FILE__
+  Morph::init_analyzer
+
+  markov = Markov.new
+  while line = gets do
+    texts = line.chomp.split(/[。?？!！ 　]+/)
+    texts.each do |text|
+      next if text.empty?
+      markov.add_sentence(Morph::analyze(text))
+      print '.'
+    end
+  end
+  puts
+
+  loop do
+    print('> ')
+    line = gets.chomp
+    break if line.empty?
+    parts = Morph::analyze(line)
+    keyword, p = parts.find{|w, part| Morph::keyword?(part)}
+    puts(markov.generate(keyword))
+  end
+end
+# ----------------------------------------------------------------
+# ■■■　■■■■　■■■　■■　■■　　■■■　　■■　　■■　■　■
+# ■■　　　■■■　　■　　■　■　■　■　■　■■■　■■　■　■　■
+# ■マルコフ↑■■　■　■　■　　　■　　■■　■■■　■■　■　■　■
+# 　　　　　　　■　■■■　■　■　■　■　■■　　■■　　■■■　■■
 # ---------------------ここからDictionaryクラスの定義開始---------
 class Dictionary
 
@@ -281,6 +378,11 @@ class Dictionary
 
   def study_pattern(input, parts)
     parts.each do |word, part|
+      next if word == "EOS"
+    word = word.toutf8                    # 念のためutf-8に変換
+    word.chomp!                           # 取り出した行の改行を消す
+    part = part.toutf8                    # 念のためutf-8に変換
+    part.chomp!                           # 取り出した行の改行を消す
       next unless Morph::keyword?(part)
       next if Regexp::quote(word) != word
       duped = @pattern.find{|ptn_item| ptn_item.pattern == word}
@@ -297,6 +399,11 @@ class Dictionary
     template = ''
     count = 0
     parts.each do |word, part|
+      next if word == "EOS"
+    word = word.toutf8                    # 念のためutf-8に変換
+    word.chomp!                           # 取り出した行の改行を消す
+    part = part.toutf8                    # 念のためutf-8に変換
+    part.chomp!                           # 取り出した行の改行を消す
       if Morph::keyword?(part)
         word = '%noun%'
         count += 1
@@ -310,6 +417,8 @@ class Dictionary
     end
   end
 
+
+# ここに入力文字保存
   def save
     open('dics/random.txt', 'w') do |f|
       f.puts(@random)
@@ -436,7 +545,7 @@ class Responder
   end
 
   # ここが応答メソッドとなる responseメソッド
-  def response(input, mood)
+  def response(input, parts, mood)
     # 感情値の実装によりmoodを追加している
 
     #ここではインプットされる言葉に対し、文字列を返すところ
@@ -460,9 +569,9 @@ end
 # ここのWhatResponderでは、入力に対して同じ事を返す
 class WhatResponder < Responder
   # ここが応答メソッドとなる responseメソッド
-  def response(input, mood)
+  def response(input, parts, mood)
     # 入力文字に対して"ってなに"を付けて返す
-    return "#{input}ってなに？"
+    return "#{parts}ってなに？"
   end
 end
 # ---------------------WhatResponderクラスおしまい-------------
@@ -473,7 +582,7 @@ end
 class RandomResponder < Responder
   # ここが応答メソッドとなる responseメソッド
   # ここでgetsしたinputに対する反応を設定する
-  def response(input, mood)
+  def response(input, parts, mood)
     # 設定辞書を配列化した@dictionaryの中からランダムで一つ返す
     return select_random(@dictionary.random)
   end
@@ -483,7 +592,7 @@ end
 # ---------------------PatternResponderクラス始まり-------------
 class PatternResponder < Responder
   # ここが発言パターンを見て返答する responseメソッド
-  def response(input, mood)
+  def response(input, parts, mood)
 
     @dictionary.pattern.each do |ptn_item|
       # ------------繰り返し処理-----------------------
@@ -517,6 +626,11 @@ class TemplateResponder < Responder
   def response(input, parts, mood)
     keywords = []
     parts.each do |word, part|
+      next if word == "EOS"
+    word = word.toutf8                    # 念のためutf-8に変換
+    word.chomp!                           # 取り出した行の改行を消す
+    part = part.toutf8                    # 念のためutf-8に変換
+    part.chomp!                           # 取り出した行の改行を消す
       keywords.push(word) if Morph.keyword?(part)
     end
     count = keywords.size
@@ -562,6 +676,7 @@ include Morph
 
     @resp_pattern = PatternResponder.new("Pattern", @dictionary)
     # インスタンス変数@responder に 初期値として@resp_randomを入れておく
+
     @resp_template = TemplateResponder.new('Template', @dictionary)
 
 
@@ -578,12 +693,15 @@ include Morph
       # 以前0か1を受け取って出力していた処理を今回は、0～100で行っています
       # 今回は分岐の詳細を、ランダムで取れる数値の範囲指定で処理を分けています
 
-    when 0..70
+    when 0..39
       @responder = @resp_pattern
       # ここでパターンを確率を選んでいます。（0～55なので約60%の確立でパターンを返します）
       # 同時にパターンマッチする言葉を掛けても約40%の確率でパターンを返さない事でもあります
 
-    when 71..94
+    when 40..80
+      @responder = @resp_template
+
+    when 81..89
       @responder = @resp_random
       # ここでランダムな返事を返します（56～94なので約30%の確率）
 
@@ -597,7 +715,7 @@ include Morph
     # responseメソッドを呼び出す
     # return @responder.response(input, @emotion.mood)
 
-    resp = @responder.response(input, @emotion.mood)
+    resp = @responder.response(input, parts, @emotion.mood)
     @dictionary.study(input,parts)
     return resp
   end
@@ -831,5 +949,7 @@ while true
   # 戻り値をresponseという変数に代入
   response = proto.dialogue(input)
   res = (prompt(proto) + response)
+  proto.save
   puts res
+
 end

@@ -198,7 +198,7 @@ module Morph Mecab
   end
 
   def keyword?(part)
-    return /名詞-(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ part
+    return /名詞,(一般|固有名詞|サ変接続|形容動詞語幹)/ =~ part
   end
 
   module_function :init_analyzer, :analyze, :keyword?

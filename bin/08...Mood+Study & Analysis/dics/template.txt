@@ -71,6 +71,11 @@
 1	かわいいじ%noun%ん
 1	かわいい%noun%
 1	%noun%ばい
+1	特に%noun%はない
+1	問題の%noun%かも
+1	お%noun%
+1	%noun%は
+1	かわい%noun%！
 2	%noun%で%noun%食べる？
 2	%noun%%noun%ばっかだな
 2	%noun%は%noun%のときにやるんだよ
@@ -100,8 +105,13 @@
 2	%noun%%noun%はもうええて
 2	この%noun%になるとね、%noun%のよさがわかってくるの
 2	かわいい%noun%%noun%
+2	う%noun%%noun%
+2	%noun%%noun%
 3	%noun%を%noun%%noun%に食べさせる
 3	%noun%%noun%%noun%かな？よくわかりません
 3	お%noun%は%noun%%noun%じゃないと思うぞ
 3	%noun%は%noun%な%noun%
 5	「%noun%のお%noun%さん」に出てくる%noun%%noun%な%noun%
+5	ある日の暮方の事である。一人の%noun%が、%noun%の%noun%で%noun%%noun%を待っていた。
+22	広い%noun%の%noun%には、この%noun%のほかに%noun%もいない。ただ、%noun%%noun%の剥げた、大きな%noun%に、%noun%が一匹とまっている。%noun%が、%noun%%noun%にある以上は、この%noun%のほかにも、%noun%%noun%をする%noun%%noun%%noun%や%noun%%noun%が、もう二三人はありそうなものである。%noun%が、この%noun%のほかには%noun%もいない。
+37	何故かと云うと、この二三年、%noun%には、%noun%とか%noun%風とか%noun%とか%noun%とか云う%noun%がつづいて起った。そこで%noun%のさびれ方は一通りではない。%noun%によると、%noun%や%noun%を打砕いて、その%noun%がついたり、%noun%の%noun%がついたりした%noun%を、%noun%%noun%たにつみ重ねて、%noun%の%noun%に売っていたと云う事である。%noun%がその%noun%であるから、%noun%の%noun%などは、%noun%より%noun%も捨てて%noun%る者がなかった。するとその荒れ果てたのをよい事にして、%noun%が棲む。%noun%が棲む。とうとうしまいには、%noun%取り手のない%noun%を、この%noun%へ持って来て、棄てて行くと云う%noun%さえ出来た。そこで、%noun%が見えなくなると、%noun%でも%noun%を悪るがって、この%noun%の%noun%へは%noun%をしない事になってしまったのである。

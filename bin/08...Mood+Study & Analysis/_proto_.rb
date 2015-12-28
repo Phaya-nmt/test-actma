@@ -176,7 +176,7 @@ module Morph Mecab
   # ここでMecabモジュールの初期化を行う
   def init_analyzer
     # Mecab::setargで起動オプションの指定
-    Mecab::sparse_tostr('-F%m %P-\t');
+    Mecab::setarg('-F%m %P-\t');
     # -区切りの品詞情報をタブで区切って出力
   end
 
@@ -210,18 +210,12 @@ end
 
 # ---------------------ここからDictionaryクラスの定義開始---------
 class Dictionary
+
   def initialize
     # オブジェクト作成時に空の配列を作成↓
-    load_random
-    load_pattern
-    load_template
-    load_markov
-  end
 
     # ランダムな返答を返すための配列
-  def load_random
     @random = []
-    begin
 
     # 以下でopenメソッドにファイル名を引数として渡す
     open('dics/random.txt') do |f|
@@ -235,17 +229,10 @@ class Dictionary
         # -------------繰り返し終了----------------------
       end
     end
-    rescue => e
-      puts(e.message)
-      @random.push('こんにちは')
-    end
-  end
 
     # パターンに反応した返事の配列（ハッシュ）
-  def load_pattern
     @pattern = []
 
-    begin
     open('dics/pattern.txt') do |f|
       f.each do |line|
         # ------------繰り返し処理-----------------------
@@ -268,14 +255,7 @@ class Dictionary
         # -------------繰り返し終了----------------------
       end
     end
-    rescue => e
-      puts(e.message)
-    end
-  end
-
-  def load_template
     @template = []
-    begin
       open('dics/template.txt') do |f|
         f.each do |line|
           line = line.toutf8                    # 念のためutf-8に変換
@@ -287,28 +267,12 @@ class Dictionary
           @template[count].push(template)
       end
     end
-    rescue => e
-      puts(e.message)
-    end
   end
-
-  def load_markov
-    @markov = Markov.new
-    begin
-      open('dics/markov.dat', 'rb') do |f|
-        @markov.load(f)
-      end
-    rescue => e
-      puts(e.message)
-    end
-  end
-
 
   def study(input, parts)
     study_random(input)
     study_pattern(input, parts)
     study_template(parts)
-    study_markov(parts)
   end
 
   def study_random(input)
@@ -357,10 +321,6 @@ class Dictionary
     end
   end
 
-  def study_markov(parts)
-    @markov.add_sentence(parts)
-  end
-
 
 # ここに入力文字保存
   def save
@@ -380,14 +340,10 @@ class Dictionary
         end
       end
     end
-
-    open('dics/markov.dat', 'wb') do |f|
-      @markov.save(f)
-    end
   end
 
   # 外部オブジェクトからそれぞれにアクセスする為のメソッド（アクセサ）
-  attr_reader :random, :pattern, :template, :markov
+  attr_reader :random, :pattern, :template
   # 従来のattr_readerを使わない方法
   #   def random
   #     return @random
@@ -470,7 +426,7 @@ class PatternItem
     return pattern + "\t" + phrases.join('|')
   end
 
-  attr_reader :modify, :pattern, :phrases
+  attr_reader :modify, :pattern, :phrases, :random
 end
 # -------------------PatternItemクラスここまで-----------
 
@@ -519,7 +475,7 @@ class WhatResponder < Responder
   # ここが応答メソッドとなる responseメソッド
   def response(input, parts, mood)
     # 入力文字に対して"ってなに"を付けて返す
-    return "#{input}ってなに？"
+    return "#{parts}ってなに？"
   end
 end
 # ---------------------WhatResponderクラスおしまい-------------
@@ -589,22 +545,6 @@ class TemplateResponder < Responder
     return select_random(@dictionary.random)
   end
 end
-
-class MarkovResponder < Responder
-  def response(input, parts, mood)
-    keyword, p = parts.find do |w, part| Morph::keyword?(part)
-    #   next if word == "EOS"
-    # w = word.toutf8                    # 念のためutf-8に変換
-    # w.chomp!                           # 取り出した行の改行を消す
-    # part = part.toutf8                    # 念のためutf-8に変換
-    # part.chomp!                           # 取り出した行の改行を消す
-    resp = @dictionary.markov.generate(keyword)
-    end
-    return resp unless resp.nil?
-
-    return select_random(@dictionary.random)
-  end
-end
 # ---------------------PatternResponderクラスおしまい-------------
 
 
@@ -659,28 +599,32 @@ include Morph
       # 以前0か1を受け取って出力していた処理を今回は、0～100で行っています
       # 今回は分岐の詳細を、ランダムで取れる数値の範囲指定で処理を分けています
 
-    when 0..39
+    when 0..19
       @responder = @resp_pattern
       # ここでパターンを確率を選んでいます。（0～55なので約60%の確立でパターンを返します）
       # 同時にパターンマッチする言葉を掛けても約40%の確率でパターンを返さない事でもあります
-    when 40..59
+
+    when 20..59
       @responder = @resp_template
+
     when 60..79
       @responder = @resp_random
       # ここでランダムな返事を返します（56～94なので約30%の確率）
     when 80..99
       @responder = @resp_marcov
+
+
     else
       @responder = @resp_what
       # 上記で設定した数字以外の場合に "～ってなに？" を返します。
+
     end
     # このメソッドの最後で@responderに対して
     # responseメソッドを呼び出す
     # return @responder.response(input, @emotion.mood)
 
     resp = @responder.response(input, parts, @emotion.mood)
-
-    @dictionary.study(input, parts)
+    @dictionary.study(input,parts)
     return resp
   end
 
@@ -773,9 +717,11 @@ class Emotion
       if ptn_item.match(input)
         # ユーザーの入力から辞書内の情報とのマッチを行い
         # マッチした場合、機嫌値を次の命令に渡す。
+
         adjust_mood(ptn_item.modify)
         # ここで機嫌値のパラメーターを変動させる命令
         # modifyメソッドは機嫌の値を返す
+
         break
       end
     end
@@ -860,7 +806,7 @@ end
 class Markov
   ENDMARK = '%END%'
   CHAIN_MAX = 30
-
+  
 def select_random(ary)
   return ary[rand(ary.size)]
 end

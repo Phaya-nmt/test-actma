@@ -663,9 +663,9 @@ include Morph
       @responder = @resp_pattern
       # ここでパターンを確率を選んでいます。（0～55なので約60%の確立でパターンを返します）
       # 同時にパターンマッチする言葉を掛けても約40%の確率でパターンを返さない事でもあります
-    when 40..59
+    when 40..69
       @responder = @resp_template
-    when 60..79
+    when 70..79
       @responder = @resp_random
       # ここでランダムな返事を返します（56～94なので約30%の確率）
     when 80..99
@@ -859,19 +859,24 @@ end
 # ----------------------------------------------------------------
 class Markov
   ENDMARK = '%END%'
+  # 文章の終わりを表す定数マーク
   CHAIN_MAX = 30
+  # 文章生成時の最大連鎖数
 
 def select_random(ary)
   return ary[rand(ary.size)]
 end
 
   def initialize
+    # ここで下記インスタンス変数をハッシュで初期化
     @dic = {}
+    # マルコフ辞書そのもの
     @starts = {}
+    # 文章が始まる単語を保持する変数
   end
 
   def add_sentence(parts)
-    return if parts.size < 3
+    return if parts.size < 5
 
     parts = parts.dup
     prefix1, prefix2 = parts.shift[0], parts.shift[0]
